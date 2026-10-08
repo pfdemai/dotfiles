@@ -18,6 +18,8 @@ set -uo pipefail
 PACKAGES=(zsh git curl wget vim tmux htop tree jq unzip fzf ripgrep bat fastfetch net-tools dnsutils)
 # Plugins zsh clonés dans oh-my-zsh (l'ordre compte : syntax-highlighting en dernier)
 ZSH_PLUGINS=(zsh-autosuggestions zsh-syntax-highlighting)
+# Ton repo dotfiles : on y récupère starship.toml quand le script est lancé seul (via curl)
+REPO_RAW="https://raw.githubusercontent.com/pfdemai/dotfiles/main"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -358,11 +360,18 @@ write_starship() {
   local dest="$CFG/starship.toml"
   mkdir -p "$CFG"
   backup "$dest"
-  # Si un starship.toml est posé à côté du script (ton dépôt dotfiles), c'est lui qu'on utilise
+  # Ordre de priorité : 1) fichier à côté du script (repo cloné)  2) fichier téléchargé depuis le repo
+  #                      3) thème rouge/noir intégré (hors ligne ou --no-install)
+  local tmp; tmp=$(mktemp)
   if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/starship.toml" ]; then
     { echo "# pfshell-managed"; cat "$SCRIPT_DIR/starship.toml"; } > "$dest"
-    ok "starship.toml copié depuis ton dépôt"; return
+    rm -f "$tmp"; ok "starship.toml copié depuis le repo local"; return
+  elif [ "$DO_INSTALL" -eq 1 ] && command -v curl >/dev/null 2>&1 && curl -fsSLo "$tmp" "$REPO_RAW/starship.toml"; then
+    { echo "# pfshell-managed"; cat "$tmp"; } > "$dest"
+    rm -f "$tmp"; ok "starship.toml téléchargé depuis ton repo"; return
   fi
+  rm -f "$tmp"
+  [ "$DO_INSTALL" -eq 1 ] && info "starship.toml introuvable dans le repo : thème par défaut utilisé"
   cat > "$dest" <<'EOF'
 # pfshell-managed — thème rouge/noir néon par défaut
 add_newline = false
@@ -376,7 +385,7 @@ format = "[$user]($style)"
 
 [hostname]
 ssh_only = false
-ssh_symbol = " [ssh]"
+ssh_symbol = ' \[ssh\]'   # crochets échappés : en starship, [ ] = syntaxe de mise en forme
 style = "#ff1744"
 format = "[@](#8a8a8a)[$hostname$ssh_symbol]($style) "
 
