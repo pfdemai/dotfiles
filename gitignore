@@ -1,0 +1,23 @@
+# --- Config propre à une machine : ne doit jamais être versionnée
+local.sh
+*.local
+
+# --- Secrets et identifiants (filet de sécurité contre un "git add ." distrait)
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*token*
+*secret*
+*.kdbx
+
+# --- Sauvegardes et fichiers temporaires
+*.bak
+*.bak.*
+*.swp
+*~
+.DS_Store

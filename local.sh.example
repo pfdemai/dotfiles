@@ -1,0 +1,32 @@
+# =============================================================================
+#  Modèle de config locale — ce fichier-ci est versionné, il ne contient rien
+#  de sensible. Sur chaque machine :
+#
+#    cp local.sh.example ~/.config/pfshell/local.sh
+#
+#  puis décommente ce qui sert. Le vrai local.sh reste sur la machine :
+#  bootstrap.sh ne l'écrase jamais et il n'est jamais poussé sur GitHub.
+#  C'est ICI qu'on met ce qui est propre à une machine ou trop sensible
+#  pour un repo public (IP, noms d'hôtes, domaines, chemins clients…).
+# =============================================================================
+
+# --- Raccourcis vers tes machines (les IP restent hors du repo public)
+# alias pve='ssh root@10.0.0.10'
+# alias dc='ssh admin@10.0.0.20'
+
+# --- Dossiers de travail de cette machine
+# alias lab='cd ~/lab'
+# export PROJETS="$HOME/projets"
+
+# --- Désactiver fastfetch à l'ouverture sur cette machine (ex. serveur partagé)
+# unalias clear 2>/dev/null
+# fastfetch() { :; }
+
+# --- Proxy d'entreprise, si la machine est derrière un proxy
+# export http_proxy="http://proxy.exemple.local:3128"
+# export https_proxy="$http_proxy"
+# export no_proxy="localhost,127.0.0.1"
+
+# --- Secrets : jamais en clair ici non plus. Les lire depuis un gestionnaire
+#     au moment où on en a besoin, par exemple avec la CLI Infisical :
+# alias secrets='infisical run --'
