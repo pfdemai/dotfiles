@@ -1,0 +1,42 @@
+window {
+    background-color: ${BG0};
+}
+
+window#${OUT_MAIN} {
+    background-image: url("/home/pfdemai/Images/wallpapers/howl011.jpg");
+    background-size: cover;
+    background-position: center;
+}
+
+* {
+    font-family: "Maple Mono NF";
+    color: ${TEXT};
+}
+
+#clock-label {
+    font-size: 64pt;
+    font-weight: 300;
+    text-shadow: 0 2px 12px alpha(${BG0}, 0.6);
+}
+
+#input-field {
+    min-width: 260px;
+    padding: 8px 14px;
+    background: alpha(${SURFACE}, 0.85);
+    border: 1px solid ${OVERLAY};
+    border-radius: 10px;
+    box-shadow: none;
+    caret-color: ${ACCENT};
+}
+
+#input-field:focus {
+    border-color: ${ACCENT};
+}
+
+#error-label {
+    color: ${RED};
+}
+
+window#${OUT_MAIN} #window-box {
+    margin-left: 1080px;
+}

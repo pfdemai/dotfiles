@@ -1,0 +1,90 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+palette = "bivouac"
+
+format = """
+$username$hostname$directory$git_branch$git_status$nodejs$rust$golang$php$python$fill$cmd_duration$time
+$character"""
+
+add_newline = true
+
+[palettes.bivouac]
+text = "${TEXT}"
+text2 = "${TEXT2}"
+muted = "${MUTED}"
+accent = "${ACCENT}"
+accent2 = "${ACCENT2}"
+red = "${RED}"
+yellow = "${YELLOW}"
+green = "${GREEN}"
+
+[directory]
+style = "fg:accent2"
+format = "[$path]($style)[$read_only]($read_only_style) "
+read_only = " \uf023"
+read_only_style = "fg:muted"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = "\ue0a0 "
+style = "fg:text2"
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style = "fg:yellow"
+format = "[$all_status$ahead_behind]($style) "
+
+[nodejs]
+symbol = "\ue718 "
+style = "fg:muted"
+format = "[$symbol$version]($style) "
+
+[rust]
+symbol = "\ue7a8 "
+style = "fg:muted"
+format = "[$symbol$version]($style) "
+
+[golang]
+symbol = "\ue627 "
+style = "fg:muted"
+format = "[$symbol$version]($style) "
+
+[php]
+symbol = "\ue608 "
+style = "fg:muted"
+format = "[$symbol$version]($style) "
+
+[python]
+symbol = "\ue73c "
+style = "fg:muted"
+format = "[$symbol$version]($style) "
+
+[fill]
+symbol = " "
+
+[cmd_duration]
+min_time = 2000
+style = "fg:muted"
+format = "[$duration]($style)  "
+
+[time]
+disabled = false
+time_format = "%R"
+style = "fg:muted"
+format = "[$time]($style)"
+
+[character]
+success_symbol = "[❯](fg:accent)"
+error_symbol = "[❯](fg:red)"
+
+[username]
+show_always = true
+style_user = "fg:text2"
+style_root = "fg:red"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "fg:muted"
+format = "[@$hostname]($style)  "
