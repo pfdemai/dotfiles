@@ -41,3 +41,7 @@ render 		swayosd.css.tmpl 		"$HOME/.config/swayosd/style.css"
 render      	gtk.css.tmpl           		"$HOME/.config/gtk-3.0/gtk.css"
 render      	gtk.css.tmpl           		"$HOME/.config/gtk-4.0/gtk.css"
 render      	brave-manifest.json.tmpl	"$THEME_DIR/build/brave/manifest.json"
+
+REPO_DIR="$(cd "$THEME_DIR/../.." && pwd)"
+render      	starship.toml.tmpl     		"$REPO_DIR/starship.toml"
+render      	fastfetch.jsonc.tmpl   		"$REPO_DIR/fastfetch.jsonc"

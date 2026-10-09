@@ -7,7 +7,8 @@
 #    ./bootstrap.sh --uninstall   retire tout et restaure les sauvegardes
 #
 #  Fichiers gérés (sauvegardés avant d'être remplacés) :
-#    ~/.zshrc  ~/.tmux.conf  ~/.vimrc  ~/.config/starship.toml  (+ 3 lignes dans ~/.bashrc)
+#    ~/.zshrc  ~/.tmux.conf  ~/.vimrc  ~/.config/starship.toml
+#    ~/.config/fastfetch/config.jsonc  (+ 3 lignes dans ~/.bashrc)
 #  Config commune bash/zsh : ~/.config/pfshell/shell.sh
 #  Ajouts propres à une machine : ~/.config/pfshell/local.sh (jamais touché)
 # =============================================================================
@@ -18,7 +19,7 @@ set -uo pipefail
 PACKAGES=(zsh git curl wget vim tmux htop tree jq unzip fzf ripgrep bat fastfetch net-tools dnsutils)
 # Plugins zsh clonés dans oh-my-zsh (l'ordre compte : syntax-highlighting en dernier)
 ZSH_PLUGINS=(zsh-autosuggestions zsh-syntax-highlighting)
-# Ton repo dotfiles : on y récupère starship.toml quand le script est lancé seul (via curl)
+# Ton repo dotfiles : on y récupère starship.toml et fastfetch.jsonc quand le script est lancé seul (via curl)
 REPO_RAW="https://raw.githubusercontent.com/pfdemai/dotfiles/main"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
@@ -29,13 +30,15 @@ BACKUP_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/pfshell/backups"
 BACKUP_DIR="$BACKUP_ROOT/$(date +%Y%m%d-%H%M%S)"
 MARK_BEGIN="# >>> pfshell >>>"
 MARK_END="# <<< pfshell <<<"
-MANAGED_FILES=("$HOME/.zshrc" "$HOME/.tmux.conf" "$HOME/.vimrc" "$CFG/starship.toml")
+# Couleurs d'origine : générées par theme/bivouac/render.sh, ne pas éditer starship.toml ni fastfetch.jsonc à la main
+MANAGED_FILES=("$HOME/.zshrc" "$HOME/.tmux.conf" "$HOME/.vimrc" "$CFG/starship.toml" "$CFG/fastfetch/config.jsonc")
 
 # ---------------------------------------------------------------- AFFICHAGE --
-c_red=$'\e[38;5;196m'; c_dim=$'\e[38;5;245m'; c_ok=$'\e[32m'; c_rst=$'\e[0m'
-info() { printf '%s::%s %s\n' "$c_red" "$c_rst" "$*"; }
+# Palette Bivouac approchée en 256 couleurs : cuivre, rouge, gris, vert
+c_acc=$'\e[38;5;173m'; c_err=$'\e[38;5;167m'; c_dim=$'\e[38;5;243m'; c_ok=$'\e[38;5;108m'; c_rst=$'\e[0m'
+info() { printf '%s::%s %s\n' "$c_acc" "$c_rst" "$*"; }
 ok()   { printf '%s ✔%s %s\n' "$c_ok" "$c_rst" "$*"; }
-warn() { printf '%s !%s %s\n' "$c_red" "$c_rst" "$*" >&2; }
+warn() { printf '%s !%s %s\n' "$c_err" "$c_rst" "$*" >&2; }
 usage() { sed -n '3,12p' "$0" | sed 's/^#  \{0,1\}//'; exit 0; }
 
 DO_INSTALL=1; DO_UNINSTALL=0
@@ -141,7 +144,7 @@ set_default_shell() {
   current=$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f7)
   case "$current" in */zsh) return 0 ;; esac
   if [ ! -t 0 ]; then info "Pour passer zsh par défaut : chsh -s $z"; return; fi
-  printf '%s::%s Passer zsh comme shell par défaut ? [O/n] ' "$c_red" "$c_rst"; read -r r
+  printf '%s::%s Passer zsh comme shell par défaut ? [O/n] ' "$c_acc" "$c_rst"; read -r r
   case "$r" in n|N) return ;; esac
   if chsh -s "$z"; then record "shell:${current:-/bin/bash}"; ok "zsh est ton shell par défaut (effectif à la prochaine connexion)"
   else warn "chsh a échoué — lance toi-même : chsh -s $z"; fi
@@ -211,7 +214,7 @@ unset __s
 __pf_confirm() {
   [ -n "${SSH_CONNECTION:-}" ] || return 0
   local h; h=$(uname -n)
-  printf '\e[38;5;196m⚠  %s de %s (session SSH).\e[0m Tape le nom de la machine pour confirmer : ' "$1" "$h"
+  printf '\e[38;5;167m⚠  %s de %s (session SSH).\e[0m Tape le nom de la machine pour confirmer : ' "$1" "$h"
   read -r __pf_r; [ "$__pf_r" = "$h" ] || { echo "Annulé."; return 1; }
 }
 unalias reboot shutdown 2>/dev/null
@@ -254,7 +257,7 @@ extract() {
   esac
 }
 
-# ---- Prompt : starship s'il est là, sinon prompt de secours rouge/noir
+# ---- Prompt : starship s'il est là, sinon prompt de secours aux couleurs Bivouac (256 couleurs)
 if command -v starship >/dev/null 2>&1; then
   if [ -n "${BASH_VERSION:-}" ]; then eval "$(starship init bash)"; else eval "$(starship init zsh)"; fi
 else
@@ -267,19 +270,20 @@ else
   if [ -n "${BASH_VERSION:-}" ]; then
     __pf_prompt() {
       local ec=$?    # doit rester la 1re ligne
-      local R='\[\e[38;5;196m\]' D='\[\e[38;5;88m\]' G='\[\e[38;5;245m\]' W='\[\e[97m\]' X='\[\e[0m\]'
-      local st="" u="$D" sym="$__PF_SYM"
-      [ "$ec" -ne 0 ] && st="${R}✘ ${ec} "
-      [ "$EUID" -eq 0 ] && { u='\[\e[1;38;5;196m\]'; sym='#'; }
-      PS1="${st}${u}\u${G}@${R}\h${G}${__PF_SSH} ${W}\w${D}$(__pf_git)${X}\n${R}${sym}${X} "
+      # cuivre (173), rouge (167), texte secondaire (249), atténué (243), sarcelle (109)
+      local A='\[\e[38;5;173m\]' E='\[\e[38;5;167m\]' U='\[\e[38;5;249m\]' M='\[\e[38;5;243m\]' P='\[\e[38;5;109m\]' X='\[\e[0m\]'
+      local st="" u="$U" c="$A" sym="$__PF_SYM"
+      [ "$ec" -ne 0 ] && { st="${E}✘ ${ec} "; c="$E"; }
+      [ "$EUID" -eq 0 ] && { u="$E"; sym='#'; }
+      PS1="${st}${u}\u${M}@\h${__PF_SSH}  ${P}\w${U}$(__pf_git)${X}\n${c}${sym}${X} "
     }
     case "${PROMPT_COMMAND:-}" in *__pf_prompt*) ;; *) PROMPT_COMMAND="__pf_prompt${PROMPT_COMMAND:+; $PROMPT_COMMAND}" ;; esac
   else
     setopt PROMPT_SUBST
     __pf_precmd() { __PF_GIT=$(__pf_git); }
     (( ${precmd_functions[(I)__pf_precmd]} )) || precmd_functions+=(__pf_precmd)
-    PROMPT='%(?..%F{196}✘ %? )%(#.%B%F{196}.%F{88})%n%b%F{245}@%F{196}%m%F{245}${__PF_SSH} %F{white}%~%F{88}${__PF_GIT}%f
-%F{196}%(#.#.${__PF_SYM})%f '
+    PROMPT='%(?..%F{167}✘ %? )%(#.%F{167}.%F{249})%n%F{243}@%m${__PF_SSH}  %F{109}%~%F{249}${__PF_GIT}%f
+%(?.%F{173}.%F{167})%(#.#.${__PF_SYM})%f '
   fi
 fi
 
@@ -316,7 +320,7 @@ write_zshrc() {
 
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME=""                     # le prompt est géré par starship
-ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=242"
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8"   # « noir vif » de la palette du terminal
 
 # Plugins chargés seulement s'ils sont présents (pas d'erreur sur une machine incomplète)
 plugins=(git)
@@ -361,7 +365,7 @@ write_starship() {
   mkdir -p "$CFG"
   backup "$dest"
   # Ordre de priorité : 1) fichier à côté du script (repo cloné)  2) fichier téléchargé depuis le repo
-  #                      3) thème rouge/noir intégré (hors ligne ou --no-install)
+  #                      3) thème Bivouac intégré (hors ligne ou --no-install)
   local tmp; tmp=$(mktemp)
   if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/starship.toml" ]; then
     { echo "# pfshell-managed"; cat "$SCRIPT_DIR/starship.toml"; } > "$dest"
@@ -371,50 +375,84 @@ write_starship() {
     rm -f "$tmp"; ok "starship.toml téléchargé depuis ton repo"; return
   fi
   rm -f "$tmp"
-  [ "$DO_INSTALL" -eq 1 ] && info "starship.toml introuvable dans le repo : thème par défaut utilisé"
+  [ "$DO_INSTALL" -eq 1 ] && info "starship.toml introuvable dans le repo : thème de secours utilisé"
+  # Secours hors ligne : copie figée des couleurs Bivouac (la source reste theme/bivouac/palette.env)
   cat > "$dest" <<'EOF'
-# pfshell-managed — thème rouge/noir néon par défaut
-add_newline = false
-format = "$username$hostname$directory$git_branch$git_status$python$cmd_duration$line_break$status$character"
+# pfshell-managed — thème Bivouac de secours
+format = """
+$username$hostname$directory$git_branch$git_status$python$fill$cmd_duration$time
+$character"""
 
 [username]
 show_always = true
-style_user = "#a00000"
-style_root = "bold #ff1744"
+style_user = "#aab3b3"
+style_root = "#d9695f"
 format = "[$user]($style)"
 
 [hostname]
 ssh_only = false
 ssh_symbol = ' \[ssh\]'   # crochets échappés : en starship, [ ] = syntaxe de mise en forme
-style = "#ff1744"
-format = "[@](#8a8a8a)[$hostname$ssh_symbol]($style) "
+style = "#76838a"
+format = "[@$hostname$ssh_symbol]($style)  "
 
 [directory]
-style = "bold white"
-truncation_length = 4
+style = "#72a6bd"
+truncation_length = 3
+truncation_symbol = "…/"
 
 [git_branch]
-style = "#a00000"
-format = '[\($branch\)]($style) '
+style = "#aab3b3"
+format = "[$branch]($style) "
 
 [git_status]
-style = "#ff1744"
+style = "#dcb66a"
+format = "[$all_status$ahead_behind]($style) "
+
+[fill]
+symbol = " "
 
 [cmd_duration]
-min_time = 3000
-style = "#8a8a8a"
-format = "[⏱ $duration]($style) "
+min_time = 2000
+style = "#76838a"
+format = "[$duration]($style)  "
 
-[status]
+[time]
 disabled = false
-style = "#ff1744"
-format = "[✘ $status]($style) "
+time_format = "%R"
+style = "#76838a"
+format = "[$time]($style)"
 
 [character]
-success_symbol = "[❯](#ff1744)"
-error_symbol = "[❯](bold #ff1744)"
+success_symbol = "[❯](#d48b5c)"
+error_symbol = "[❯](#d9695f)"
 EOF
-  ok "starship.toml (thème rouge/noir) écrit"
+  ok "starship.toml (thème Bivouac de secours) écrit"
+}
+
+# --------------------------------------------------------------- FASTFETCH --
+# La config utilise des couleurs hexadécimales, comprises seulement depuis fastfetch 2.42 :
+# sur une version plus ancienne, on n'écrit rien (fastfetch garde ses couleurs par défaut).
+version_ge() { [ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -n1)" = "$2" ]; }
+
+write_fastfetch() {
+  command -v fastfetch >/dev/null 2>&1 || return 0
+  local ver dest="$CFG/fastfetch/config.jsonc"
+  ver=$(fastfetch --version 2>/dev/null | awk '{print $2}')
+  if [ -z "$ver" ] || ! version_ge "$ver" 2.42; then
+    info "fastfetch ${ver:-?} trop ancien pour la config Bivouac : couleurs par défaut conservées"; return 0
+  fi
+  mkdir -p "$(dirname "$dest")"
+  local tmp; tmp=$(mktemp)
+  if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/fastfetch.jsonc" ]; then
+    cp "$SCRIPT_DIR/fastfetch.jsonc" "$tmp"
+  elif [ "$DO_INSTALL" -eq 1 ] && command -v curl >/dev/null 2>&1 && curl -fsSLo "$tmp" "$REPO_RAW/fastfetch.jsonc"; then
+    :
+  else
+    rm -f "$tmp"; info "fastfetch.jsonc introuvable : couleurs par défaut conservées"; return 0
+  fi
+  backup "$dest"
+  { echo "// pfshell-managed"; cat "$tmp"; } > "$dest"
+  rm -f "$tmp"; ok "Config fastfetch écrite"
 }
 
 # ------------------------------------------------------------ TMUX & VIM ----
@@ -429,16 +467,20 @@ setw -g pane-base-index 1
 set -g renumber-windows on
 set -sg escape-time 10
 set -g default-terminal "screen-256color"
+set -ga terminal-overrides ",*256col*:Tc,foot*:Tc"   # vraies couleurs (24 bits) pour l'invite starship
 bind | split-window -h -c "#{pane_current_path}"
 bind - split-window -v -c "#{pane_current_path}"
 bind c new-window -c "#{pane_current_path}"
 bind r source-file ~/.tmux.conf \; display "config rechargée"
-set -g status-style "bg=black,fg=colour196"
-set -g status-left "#[bold] #S "
-set -g status-right "#[fg=colour245]#H #[fg=colour196]%H:%M "
-setw -g window-status-current-style "fg=black,bg=colour196,bold"
-set -g pane-border-style "fg=colour88"
-set -g pane-active-border-style "fg=colour196"
+# Couleurs Bivouac en 256 couleurs (compatibles avec les vieux tmux de serveur)
+set -g status-style "bg=colour234,fg=colour249"
+set -g status-left "#[fg=colour173] #S "
+set -g status-right "#[fg=colour243]#H  #[fg=colour249]%H:%M "
+setw -g window-status-style "fg=colour243"
+setw -g window-status-current-style "fg=colour173"
+set -g pane-border-style "fg=colour238"
+set -g pane-active-border-style "fg=colour173"
+set -g message-style "bg=colour236,fg=colour254"
 EOF
   ok "~/.tmux.conf écrit"
 }
@@ -448,6 +490,7 @@ write_vim() {
   cat > "$HOME/.vimrc" <<'EOF'
 " pfshell-managed
 set nocompatible encoding=utf-8
+set background=dark
 syntax on
 filetype plugin indent on
 set number ruler showcmd laststatus=2
@@ -503,8 +546,9 @@ write_shell_config
 write_zshrc
 hook_bashrc
 write_starship
+write_fastfetch
 write_tmux
 write_vim
 [ "$DO_INSTALL" -eq 1 ] && set_default_shell
 
-printf '\n%sTerminé.%s Ouvre un nouveau terminal, ou : %sexec zsh%s\n' "$c_red" "$c_rst" "$c_dim" "$c_rst"
+printf '\n%sTerminé.%s Ouvre un nouveau terminal, ou : %sexec zsh%s\n' "$c_acc" "$c_rst" "$c_dim" "$c_rst"

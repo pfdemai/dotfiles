@@ -1,101 +1,90 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+palette = "bivouac"
+
 format = """
-[░▒▓](#ff3c28)\
-$os\
-[](bg:#5ce6b0 fg:#ff3c28)\
-$directory\
-[](fg:#5ce6b0 bg:#17171a)\
-$git_branch\
-$git_status\
-[](fg:#17171a bg:#121214)\
-$nodejs\
-$bun\
-$rust\
-$golang\
-$php\
-[](fg:#121214 bg:#0a0a0c)\
-$time\
-[ ](fg:#0a0a0c)\
-\n$character"""
+$username$hostname$directory$git_branch$git_status$nodejs$rust$golang$php$python$fill$cmd_duration$time
+$character"""
+
+add_newline = true
+
+[palettes.bivouac]
+text = "#e4e2da"
+text2 = "#aab3b3"
+muted = "#76838a"
+accent = "#d48b5c"
+accent2 = "#72a6bd"
+red = "#d9695f"
+yellow = "#dcb66a"
+green = "#93b37d"
 
 [directory]
-style = "fg:#0a0a0c bg:#5ce6b0"
-format = "[ $path ]($style)"
+style = "fg:accent2"
+format = "[$path]($style)[$read_only]($read_only_style) "
+read_only = " \uf023"
+read_only_style = "fg:muted"
 truncation_length = 3
 truncation_symbol = "…/"
 
-[directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
-
 [git_branch]
-symbol = ""
-style = "bg:#17171a"
-format = '[[ $symbol $branch ](fg:#769ff0 bg:#394260)]($style)'
+symbol = "\ue0a0 "
+style = "fg:text2"
+format = "[$symbol$branch]($style) "
 
 [git_status]
-style = "bg:#17171a"
-format = '[[($all_status$ahead_behind )](fg:#769ff0 bg:#394260)]($style)'
+style = "fg:yellow"
+format = "[$all_status$ahead_behind]($style) "
 
 [nodejs]
-symbol = ""
-style = "bg:#121214"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
-
-[bun]
-symbol = ""
-style = "bg:#121214"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+symbol = "\ue718 "
+style = "fg:muted"
+format = "[$symbol$version]($style) "
 
 [rust]
-symbol = ""
-style = "bg:#121214"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+symbol = "\ue7a8 "
+style = "fg:muted"
+format = "[$symbol$version]($style) "
 
 [golang]
-symbol = ""
-style = "bg:#121214"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+symbol = "\ue627 "
+style = "fg:muted"
+format = "[$symbol$version]($style) "
 
 [php]
-symbol = ""
-style = "bg:#121214"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+symbol = "\ue608 "
+style = "fg:muted"
+format = "[$symbol$version]($style) "
+
+[python]
+symbol = "\ue73c "
+style = "fg:muted"
+format = "[$symbol$version]($style) "
+
+[fill]
+symbol = " "
+
+[cmd_duration]
+min_time = 2000
+style = "fg:muted"
+format = "[$duration]($style)  "
 
 [time]
 disabled = false
-time_format = "%R" # Hour:Minute Format
-style = "bg:#0a0a0c"
-format = '[[  $time ](fg:#8fd9b8 bg:#0a0a0c)]($style)'
+time_format = "%R"
+style = "fg:muted"
+format = "[$time]($style)"
 
-[os]
-style = "bg:#ff3c28 fg:#0a0a0c"
-format = "[ $symbol ]($style)"
-disabled = false
+[character]
+success_symbol = "[❯](fg:accent)"
+error_symbol = "[❯](fg:red)"
 
-[os.symbols]
-Windows = "󰍲"
-Ubuntu = "󰕈"
-SUSE = ""
-Raspbian = "󰐿"
-Mint = "󰣭"
-Macos = "󰀵"
-Manjaro = ""
-Linux = "󰌽"
-Gentoo = "󰣨"
-Fedora = "󰣛"
-Alpine = ""
-Amazon = ""
-Android = ""
-AOSC = ""
-Arch = "󰣇"
-Artix = "󰣇"
-EndeavourOS = ""
-CentOS = ""
-Debian = "󰣚"
-Redhat = "󱄛"
-RedHatEnterprise = "󱄛"
-Pop = ""
+[username]
+show_always = true
+style_user = "fg:text2"
+style_root = "fg:red"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "fg:muted"
+format = "[@$hostname]($style)  "
